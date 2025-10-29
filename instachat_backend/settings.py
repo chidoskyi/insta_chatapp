@@ -40,26 +40,42 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
+    'django.contrib.sites',  # Required by allauth
+    
     # Third party
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework.authtoken',  # Required by dj-rest-auth
     'corsheaders',
     'channels',
     'drf_spectacular',
-
+    
+    # Django allauth
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    
+    # dj-rest-auth
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
+    
     # Local apps
     'accounts',
-    # 'posts',
-    # 'stories',
-    # 'messaging',
-    # 'notifications',
+    'posts',
+    'stories',
+    'messaging',
+    'notifications',
+    'realtime',
+    'reels',
+    'settings',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -192,6 +208,26 @@ CHANNEL_LAYERS = {
     },
 }
 
+# Celery Beat (Periodic Tasks)
+CELERY_BEAT_SCHEDULE = {
+    'cleanup-expired-stories': {
+        'task': 'stories.tasks.cleanup_expired_stories',
+        'schedule': 3600.0,  # Run every hour
+    },
+    'cleanup-old-story-views': {
+        'task': 'stories.tasks.cleanup_old_story_views',
+        'schedule': 86400.0,  # Run daily
+    },
+    'cleanup-old-notifications': {
+        'task': 'notifications.tasks.cleanup_old_notifications',
+        'schedule': 86400.0,  # Run daily
+    },
+    'cleanup-deleted-reels': {
+        'task': 'reels.tasks.cleanup_deleted_reels',
+        'schedule': 86400.0,  # Run daily
+    },
+}
+
 # Celery Configuration
 CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/1')
 CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND', default='redis://localhost:6379/1')
@@ -208,3 +244,92 @@ SPECTACULAR_SETTINGS = {
 }
 
 
+# Django Allauth Settings
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+ACCOUNT_ADAPTER = 'accounts.adapters.CustomAccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'accounts.adapters.CustomSocialAccountAdapter'
+
+# NEW: Replace deprecated settings with ACCOUNT_SIGNUP_FIELDS
+ACCOUNT_SIGNUP_FIELDS = [
+    'email*',      # * means required
+    'username*',
+    'password1*',
+    'password2*',
+]
+
+# NEW: Replace ACCOUNT_LOGIN_METHODS string with set
+ACCOUNT_LOGIN_METHODS = {'email', 'username'}  # Changed from string to set
+
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
+ACCOUNT_USER_MODEL_EMAIL_FIELD = 'email'
+
+# Social Account Settings
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'optional'
+SOCIALACCOUNT_QUERY_EMAIL = True
+
+# Google OAuth Settings
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'APP': {
+            'client_id': config('GOOGLE_OAUTH_CLIENT_ID', default=''),
+            'secret': config('GOOGLE_OAUTH_CLIENT_SECRET', default=''),
+            'key': ''
+        }
+    }
+}
+
+
+# REST Auth Settings
+REST_AUTH = {
+    'USE_JWT': True,
+    'JWT_AUTH_HTTPONLY': False,
+    'JWT_AUTH_COOKIE': None,
+    'JWT_AUTH_REFRESH_COOKIE': None,
+    'SESSION_LOGIN': False,
+}
+
+# After successful social login, return JWT tokens
+REST_USE_JWT = True
+
+
+
+# Email Configuration
+EMAIL_BACKEND = config(
+    'EMAIL_BACKEND',
+    default='django.core.mail.backends.console.EmailBackend'  # For development
+)
+
+# For production, use SMTP:
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+# EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@instachatapp.com')
+
+# Add timeout settings
+EMAIL_TIMEOUT = 10  # seconds
+
+# SSL Configuration for macOS
+EMAIL_USE_SSL = False  # We're using TLS, not SSL
+EMAIL_SSL_CERTFILE = None
+EMAIL_SSL_KEYFILE = None
+
+# Optional: Set custom CA bundle path (if needed)
+# import certifi
+# EMAIL_SSL_CERTFILE = certifi.where()

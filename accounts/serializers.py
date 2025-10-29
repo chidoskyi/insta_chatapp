@@ -2,8 +2,10 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-
-from accounts.models import Follow
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_bytes, force_str
+from accounts.models import EmailVerificationCode, Follow, Profile
 
 User = get_user_model()
 
@@ -59,6 +61,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    avatar = serializers.ImageField(required=False, allow_null=True)
+    
+    class Meta:
+        model = Profile
+        fields = ['bio', 'website', 'location', 'phone', 
+                  'gender', 'birthday', 'avatar']    
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True)
@@ -92,13 +102,14 @@ class UserSerializer(serializers.ModelSerializer):
     followers_count = serializers.SerializerMethodField()
     following_count = serializers.SerializerMethodField()
     is_following = serializers.SerializerMethodField()
-    
+    profile = ProfileUpdateSerializer(required=False)
+
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'display_name', 'bio', 'avatar',
             'is_private', 'verified', 'created_at', 'followers_count',
-            'following_count', 'is_following'
+            'following_count', 'is_following', 'profile'
         ]
         read_only_fields = ['id', 'created_at', 'verified']
     
@@ -121,7 +132,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
     following_count = serializers.SerializerMethodField()
     posts_count = serializers.SerializerMethodField()
     is_following = serializers.SerializerMethodField()
-    
+    profile = ProfileUpdateSerializer(required=False)
+
     class Meta:
         model = User
         fields = [
@@ -146,6 +158,136 @@ class UserProfileSerializer(serializers.ModelSerializer):
             return obj.followers.filter(follower=request.user).exists()
         return False
 
+class PasswordResetRequestSerializer(serializers.Serializer):
+    """Request password reset email"""
+    email = serializers.EmailField()
+    
+    def validate_email(self, value):
+        try:
+            user = User.objects.get(email=value.lower())
+        except User.DoesNotExist:
+            # Don't reveal that email doesn't exist (security)
+            pass
+        return value.lower()
+    
+    def save(self):
+        email = self.validated_data['email']
+        try:
+            user = User.objects.get(email=email)
+            # Generate token and uid
+            token = default_token_generator.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            
+            # Send email via Celery
+            from .tasks import send_password_reset_email
+            send_password_reset_email.delay(user.id, uid, token)
+            
+            return {'uid': uid, 'token': token}
+        except User.DoesNotExist:
+            # Still return success to not reveal user existence
+            return None
+
+class UserSearchSerializer(serializers.ModelSerializer):
+    """Serializer for user search results"""
+    avatar = serializers.SerializerMethodField()
+    full_name = serializers.CharField(source='full_name', read_only=True)
+    bio = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'username',
+            'display_name',
+            'full_name',
+            'avatar',
+            'bio',
+            'verified',
+            'auth_provider'
+        ]
+    
+    def get_avatar(self, obj):
+        """Get user's avatar URL from profile"""
+        try:
+            if hasattr(obj, 'profile') and obj.profile.avatar:
+                request = self.context.get('request')
+                if request:
+                    return request.build_absolute_uri(obj.profile.avatar.url)
+            return None
+        except Exception:
+            return None
+    
+    def get_bio(self, obj):
+        """Get user's bio from profile"""
+        try:
+            if hasattr(obj, 'profile'):
+                return obj.profile.bio
+            return None
+        except Exception:
+            return None
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    """Confirm password reset with token"""
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(
+        write_only=True,
+        validators=[validate_password]
+    )
+    new_password_confirm = serializers.CharField(write_only=True)
+    
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError(
+                {"new_password": "Passwords don't match"}
+            )
+        
+        try:
+            uid = force_str(urlsafe_base64_decode(attrs['uid']))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            raise serializers.ValidationError({"uid": "Invalid user ID"})
+        
+        if not default_token_generator.check_token(user, attrs['token']):
+            raise serializers.ValidationError({"token": "Invalid or expired token"})
+        
+        attrs['user'] = user
+        return attrs
+    
+    def save(self):
+        user = self.validated_data['user']
+        user.set_password(self.validated_data['new_password'])
+        user.save()
+        return user
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    """Change password while logged in"""
+    old_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(
+        write_only=True,
+        validators=[validate_password]
+    )
+    new_password_confirm = serializers.CharField(write_only=True)
+    
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Current password is incorrect")
+        return value
+    
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError(
+                {"new_password": "Passwords don't match"}
+            )
+        return attrs
+    
+    def save(self):
+        user = self.context['request'].user
+        user.set_password(self.validated_data['new_password'])
+        user.save()
+        return user
 
 class FollowToggleSerializer(serializers.Serializer):
     """Serializer for follow/unfollow responses"""
@@ -169,3 +311,103 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['display_name', 'bio', 'avatar', 'is_private']
+
+
+# class EmailChangeSerializer(serializers.Serializer):
+#     new_email = serializers.EmailField(required=True)
+#     password = serializers.CharField(required=False, write_only=True)
+    
+#     def validate_new_email(self, value):
+#         """Check if email is already in use"""
+#         if User.objects.filter(email=value).exists():
+#             raise serializers.ValidationError("This email is already in use.")
+#         return value
+    
+#     def validate(self, attrs):
+#         user = self.context['request'].user
+        
+#         # If user registered with email, password is required
+#         if user.auth_provider == 'email':
+#             if not attrs.get('password'):
+#                 raise serializers.ValidationError({
+#                     "password": "Password is required to change email."
+#                 })
+            
+#             # Verify password
+#             if not user.check_password(attrs['password']):
+#                 raise serializers.ValidationError({
+#                     "password": "Incorrect password."
+#                 })
+        
+#         return attrs
+
+
+class EmailChangeRequestSerializer(serializers.Serializer):
+    new_email = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True, write_only=True)
+    
+    def validate_new_email(self, value):
+        """Check if email is already in use"""
+        user = self.context['request'].user
+        
+        if user.email == value:
+            raise serializers.ValidationError("This is already your current email.")
+        
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("This email is already in use.")
+        
+        return value
+    
+    def validate_password(self, value):
+        """Verify user's password"""
+        user = self.context['request'].user
+        
+        if not user.check_password(value):
+            raise serializers.ValidationError("Incorrect password.")
+        
+        return value
+
+
+
+class EmailVerificationCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmailVerificationCode
+        fields = ['id', 'user', 'code', 'created_at', 'expires_at']
+        read_only_fields = ['id', 'created_at', 'expires_at']
+
+class EmailVerificationSerializer(serializers.Serializer):
+    code = serializers.CharField(max_length=6, min_length=6, required=True)
+    
+    def validate_code(self, value):
+        """Validate the code format"""
+        if not value.isdigit():
+            raise serializers.ValidationError("Code must be 6 digits.")
+        return value
+
+
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    profile = ProfileUpdateSerializer()
+    
+    class Meta:
+        model = User
+        fields = ['username', 'display_name', 'profile']
+    
+    def update(self, instance, validated_data):
+        profile_data = validated_data.pop('profile', None)
+        
+        # Update user fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Update profile fields
+        if profile_data:
+            profile, _ = Profile.objects.get_or_create(user=instance)
+            for attr, value in profile_data.items():
+                setattr(profile, attr, value)
+            profile.save()
+        
+        return instance
+
+
