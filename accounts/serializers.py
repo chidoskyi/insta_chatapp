@@ -61,13 +61,37 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 
+class ProfileSerializer(serializers.ModelSerializer):
+    avatar = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Profile
+        fields = [
+            'bio', 'website', 'location', 'phone', 
+            'is_private', 'gender', 'birthday', 'avatar'
+        ]
+    
+    def get_avatar(self, obj):
+        if obj.avatar:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.avatar.url)
+            return obj.avatar.url
+        return None
+
+
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     avatar = serializers.ImageField(required=False, allow_null=True)
     
     class Meta:
         model = Profile
-        fields = ['bio', 'website', 'location', 'phone', 
-                  'gender', 'birthday', 'avatar']    
+        fields = ['bio', 'website', 'location', 'phone', 'is_private',
+                  'gender', 'birthday', 'avatar']   
+        extra_kwargs = {
+            'avatar': {'required': False},
+        }
+
+         
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
@@ -107,9 +131,12 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'email', 'display_name', 'bio', 'avatar',
-            'is_private', 'verified', 'created_at', 'followers_count',
-            'following_count', 'is_following', 'profile'
+            'id', 'username', 'email', 'display_name',
+            # 'is_private',
+              'verified', 'created_at', 
+            'followers_count',
+            'following_count', 'is_following',
+              'profile'
         ]
         read_only_fields = ['id', 'created_at', 'verified']
     
@@ -137,9 +164,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'email', 'display_name', 'bio', 'avatar',
-            'is_private', 'verified', 'created_at', 'last_seen',
-            'followers_count', 'following_count', 'posts_count', 'is_following'
+            'id', 'username', 'email', 'display_name', 
+            'verified', 'created_at', 'last_seen',
+            'followers_count', 'following_count', 'posts_count', 'is_following',
+            'profile'
         ]
         read_only_fields = ['id', 'created_at', 'verified', 'last_seen']
     
@@ -157,6 +185,54 @@ class UserProfileSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return obj.followers.filter(follower=request.user).exists()
         return False
+    
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    """
+    User update serializer with nested profile updates
+    Used for PATCH/PUT requests
+    """
+    profile = ProfileUpdateSerializer(required=False)
+
+    class Meta:
+        model = User
+        fields = ['display_name', 'profile']
+    
+    def validate_display_name(self, value):
+        """Validate display name"""
+        if value and len(value.strip()) < 2:
+            raise serializers.ValidationError(
+                "Display name must be at least 2 characters long."
+            )
+        return value.strip() if value else value
+    
+    def update(self, instance, validated_data):
+        """Update user and profile data"""
+        profile_data = validated_data.pop('profile', None)
+        
+        # Update user fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # Update or create profile
+        if profile_data:
+            profile, created = Profile.objects.get_or_create(user=instance)
+            
+            for attr, value in profile_data.items():
+                setattr(profile, attr, value)
+            
+            profile.save()
+        
+        return instance
+    
+    def to_representation(self, instance):
+        """Return full profile data after update"""
+        serializer = UserProfileSerializer(
+            instance, 
+            context=self.context
+        )
+        return serializer.data
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     """Request password reset email"""

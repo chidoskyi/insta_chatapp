@@ -1,0 +1,48 @@
+[2025-10-30 01:10:07,043] INFO django.utils.autoreload /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/utils/autoreload.py:667 - Watching for file changes with StatReloader
+[2025-10-30 01:11:19,589] INFO django.utils.autoreload /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/utils/autoreload.py:265 - /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/instachat_backend/settings.py changed, reloading.
+[2025-10-30 01:11:20,786] INFO django.utils.autoreload /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/utils/autoreload.py:667 - Watching for file changes with StatReloader
+[2025-10-30 01:11:23,280] INFO django.utils.autoreload /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/utils/autoreload.py:265 - /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/instachat_backend/settings.py changed, reloading.
+[2025-10-30 01:11:24,090] INFO django.utils.autoreload /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/utils/autoreload.py:667 - Watching for file changes with StatReloader
+[2025-10-30 01:11:27,636] INFO django.utils.autoreload /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/utils/autoreload.py:265 - /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/instachat_backend/settings.py changed, reloading.
+[2025-10-30 01:11:28,384] INFO django.utils.autoreload /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/utils/autoreload.py:667 - Watching for file changes with StatReloader
+[2025-10-30 01:12:49,706] WARNING django.server /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/core/servers/basehttp.py:213 - "POST /api/users/me/ HTTP/1.1" 405 41
+[2025-10-30 01:13:12,423] INFO django.utils.autoreload /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/utils/autoreload.py:667 - Watching for file changes with StatReloader
+[2025-10-30 01:16:49,328] INFO accounts.views /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/views.py:946 - Updating profile for user testuser
+[2025-10-30 01:16:49,370] INFO accounts.views /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/views.py:959 - Profile updated successfully for user testuser1
+[2025-10-30 01:16:49,373] INFO django.server /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/core/servers/basehttp.py:213 - "PUT /api/users/me/ HTTP/1.1" 200 192
+[2025-10-30 01:17:34,877] INFO django.utils.autoreload /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/utils/autoreload.py:265 - /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/serializers.py changed, reloading.
+[2025-10-30 01:17:35,702] INFO django.utils.autoreload /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/utils/autoreload.py:667 - Watching for file changes with StatReloader
+[2025-10-30 01:17:39,432] INFO django.utils.autoreload /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/utils/autoreload.py:265 - /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/serializers.py changed, reloading.
+[2025-10-30 01:17:40,426] INFO django.utils.autoreload /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/utils/autoreload.py:667 - Watching for file changes with StatReloader
+[2025-10-30 01:17:49,469] INFO accounts.views /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/views.py:946 - Updating profile for user testuser1
+[2025-10-30 01:17:49,513] INFO accounts.views /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/views.py:959 - Profile updated successfully for user testuser1
+[2025-10-30 01:17:49,517] INFO django.server /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/core/servers/basehttp.py:213 - "PUT /api/users/me/ HTTP/1.1" 200 255
+[2025-10-30 01:25:59,985] INFO accounts.views /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/views.py:946 - Updating profile for user testuser1
+[2025-10-30 01:26:00,000] INFO accounts.views /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/views.py:959 - Profile updated successfully for user testuser1
+[2025-10-30 01:26:00,004] INFO django.server /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/core/servers/basehttp.py:213 - "PATCH /api/users/me/ HTTP/1.1" 200 255
+[2025-10-30 01:29:52,532] INFO accounts.views /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/views.py:946 - Updating profile for user testuser1
+[2025-10-30 01:29:52,538] INFO accounts.views /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/views.py:959 - Profile updated successfully for user testuser1
+[2025-10-30 01:29:52,541] INFO django.server /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/core/servers/basehttp.py:213 - "PATCH /api/users/me/ HTTP/1.1" 200 255
+[2025-10-30 01:30:07,737] INFO accounts.views /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/views.py:946 - Updating profile for user testuser1
+[2025-10-30 01:30:07,741] INFO accounts.views /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/views.py:959 - Profile updated successfully for user testuser12
+[2025-10-30 01:30:07,746] INFO django.server /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/core/servers/basehttp.py:213 - "PATCH /api/users/me/ HTTP/1.1" 200 256
+[2025-10-30 01:30:23,516] INFO accounts.views /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/views.py:946 - Updating profile for user testuser12
+[2025-10-30 01:30:23,521] INFO accounts.views /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/views.py:959 - Profile updated successfully for user testuser12
+[2025-10-30 01:30:23,522] INFO django.server /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/core/servers/basehttp.py:213 - "PATCH /api/users/me/ HTTP/1.1" 200 256
+[2025-10-30 01:31:16,285] INFO accounts.views /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/views.py:946 - Updating profile for user testuser12
+[2025-10-30 01:31:16,288] INFO accounts.views /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/views.py:959 - Profile updated successfully for user testuser12
+[2025-10-30 01:31:16,290] INFO django.server /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/core/servers/basehttp.py:213 - "PUT /api/users/me/ HTTP/1.1" 200 256
+[2025-10-30 01:31:35,976] INFO django.server /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/core/servers/basehttp.py:213 - "GET /admin/accounts/profile/ HTTP/1.1" 200 34217
+[2025-10-30 01:31:36,326] INFO django.server /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/core/servers/basehttp.py:213 - "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[2025-10-30 01:35:11,241] INFO accounts.views /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/views.py:946 - Updating profile for user testuser12
+[2025-10-30 01:35:11,866] INFO accounts.views /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/views.py:959 - Profile updated successfully for user testuser1
+[2025-10-30 01:35:11,867] INFO django.server /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/core/servers/basehttp.py:213 - "PUT /api/users/me/ HTTP/1.1" 200 255
+[2025-10-30 01:37:08,595] INFO django.utils.autoreload /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/utils/autoreload.py:265 - /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/models.py changed, reloading.
+[2025-10-30 01:37:11,219] INFO django.utils.autoreload /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/utils/autoreload.py:667 - Watching for file changes with StatReloader
+[2025-10-30 01:37:39,339] INFO django.utils.autoreload /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/utils/autoreload.py:265 - /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/serializers.py changed, reloading.
+[2025-10-30 01:37:40,168] INFO django.utils.autoreload /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/utils/autoreload.py:667 - Watching for file changes with StatReloader
+[2025-10-30 01:37:46,523] INFO accounts.views /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/views.py:946 - Updating profile for user testuser1
+[2025-10-30 01:37:46,581] INFO accounts.views /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/views.py:959 - Profile updated successfully for user testuser1
+[2025-10-30 01:37:46,583] INFO django.server /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/core/servers/basehttp.py:213 - "PUT /api/users/me/ HTTP/1.1" 200 296
+[2025-10-30 01:40:30,001] INFO django.utils.autoreload /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/utils/autoreload.py:265 - /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/accounts/serializers.py changed, reloading.
+[2025-10-30 01:40:31,523] INFO django.utils.autoreload /Users/NETPHIX_DEV/Documents/GitHub/insta_chatapp/venv/lib/python3.13/site-packages/django/utils/autoreload.py:667 - Watching for file changes with StatReloader

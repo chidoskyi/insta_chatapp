@@ -1,4 +1,4 @@
-from profile import Profile
+from .models import Profile 
 from rest_framework import status, generics, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -11,7 +11,8 @@ from django.shortcuts import get_object_or_404
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
-from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
+from rest_framework.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Q
 from django.core.paginator import Paginator
 import logging
@@ -875,66 +876,205 @@ class UserProfileByIdView(generics.RetrieveUpdateAPIView):
 
 class CurrentUserProfileView(generics.RetrieveUpdateAPIView):
     """
-    Get or update the currently logged-in user's profile
-    Endpoint: /api/users/me/
+    Retrieve or update the currently authenticated user's profile.
+    
+    Endpoints:
+        GET /api/users/me/ - Get current user profile
+        PATCH /api/users/me/ - Partially update current user profile
+        PUT /api/users/me/ - Fully update current user profile
+    
+    Permissions:
+        - User must be authenticated
     """
     permission_classes = [permissions.IsAuthenticated]
     
     def get_serializer_class(self):
+        """Return appropriate serializer based on request method"""
         if self.request.method == 'GET':
             return UserProfileSerializer
         return UserUpdateSerializer
     
     def get_object(self):
-        # Always return the currently authenticated user
+        """
+        Return the current authenticated user.
+        Ensures profile exists before returning.
+        """
         user = self.request.user
-        # Ensure profile exists
+        
+        # Ensure profile exists for the user
         Profile.objects.get_or_create(user=user)
+        
         return user
     
     def retrieve(self, request, *args, **kwargs):
-        user = self.get_object()
-        serializer = self.get_serializer(user)
-        return Response(serializer.data)
-    
-    def update(self, request, *args, **kwargs):
-        user = self.get_object()
+        """
+        GET /api/users/me/
+        Retrieve current user's profile with all computed fields
+        """
+        try:
+            user = self.get_object()
+            serializer = self.get_serializer(user)
+            
+            logger.info(f"User {user.username} retrieved their profile")
+            
+            return Response(serializer.data, status=status.HTTP_200_OK)
         
-        # Convert profile[field] syntax to nested structure
+        except Exception as e:
+            logger.error(f"Error retrieving profile: {str(e)}", exc_info=True)
+            return Response(
+                {"detail": "An error occurred while retrieving your profile."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @transaction.atomic
+    def update(self, request, *args, **kwargs):
+        """
+        PATCH/PUT /api/users/me/
+        Update current user's profile
+        
+        Supports both JSON and multipart/form-data formats:
+        - JSON: {"display_name": "...", "profile": {"bio": "..."}}
+        - Form-data: display_name=..., profile[bio]=..., profile[avatar]=<file>
+        """
+        try:
+            user = self.get_object()
+            partial = kwargs.pop('partial', True)
+            
+            # Process incoming data
+            processed_data = self._process_request_data(request)
+            
+            logger.info(f"Updating profile for user {user.username}")
+            logger.debug(f"Processed data: {processed_data}")
+            
+            # Validate and save
+            serializer = self.get_serializer(
+                user, 
+                data=processed_data, 
+                partial=partial
+            )
+            
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            
+            logger.info(f"Profile updated successfully for user {user.username}")
+            
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        except ValidationError as e:
+            logger.warning(f"Validation error for user {request.user.username}: {e.detail}")
+            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
+        
+        except Exception as e:
+            logger.error(f"Error updating profile: {str(e)}", exc_info=True)
+            return Response(
+                {"detail": "An error occurred while updating your profile."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def _process_request_data(self, request):
+        """
+        Process request data from both JSON and form-data formats.
+        
+        Handles form-data keys like profile[bio], profile[avatar] and converts
+        them to nested structure: {"profile": {"bio": "...", "avatar": file}}
+        """
         processed_data = {}
         profile_data = {}
         
         # Process regular data fields
         for key, value in request.data.items():
-            if key.startswith('profile[') and key.endswith(']'):
-                field_name = key[8:-1]
+            if self._is_profile_field(key):
+                field_name = self._extract_field_name(key)
                 profile_data[field_name] = value
             else:
                 processed_data[key] = value
         
-        # Process file fields
+        # Process file fields (for avatar uploads)
         for key, file_obj in request.FILES.items():
-            if key.startswith('profile[') and key.endswith(']'):
-                field_name = key[8:-1]
+            if self._is_profile_field(key):
+                field_name = self._extract_field_name(key)
                 profile_data[field_name] = file_obj
             else:
                 processed_data[key] = file_obj
         
-        # Add the nested profile data
+        # Add nested profile data if any
         if profile_data:
             processed_data['profile'] = profile_data
         
-        logger.info(f"Processed data structure: {processed_data}")
+        return processed_data
+    
+    @staticmethod
+    def _is_profile_field(key):
+        """Check if key represents a profile field (e.g., profile[bio])"""
+        return key.startswith('profile[') and key.endswith(']')
+    
+    @staticmethod
+    def _extract_field_name(key):
+        """Extract field name from profile[fieldname] format"""
+        return key[8:-1]  # Remove 'profile[' and ']'
+
+# class CurrentUserProfileView(generics.RetrieveUpdateAPIView):
+#     """
+#     Get or update the currently logged-in user's profile
+#     Endpoint: /api/users/me/
+#     """
+#     permission_classes = [permissions.IsAuthenticated]
+    
+#     def get_serializer_class(self):
+#         if self.request.method == 'GET':
+#             return UserProfileSerializer
+#         return UserUpdateSerializer
+    
+#     def get_object(self):
+#         # Always return the currently authenticated user
+#         user = self.request.user
+#         # Ensure profile exists
+#         Profile.objects.get_or_create(user=user)
+#         return user
+    
+#     def retrieve(self, request, *args, **kwargs):
+#         user = self.get_object()
+#         serializer = self.get_serializer(user)
+#         return Response(serializer.data)
+    
+#     def update(self, request, *args, **kwargs):
+#         user = self.get_object()
         
-        serializer = self.get_serializer(user, data=processed_data, partial=True)
+#         # Convert profile[field] syntax to nested structure
+#         processed_data = {}
+#         profile_data = {}
         
-        if serializer.is_valid():
-            logger.info("Serializer is valid, saving...")
-            serializer.save()
-            return Response(serializer.data)
-        else:
-            logger.error(f"Serializer errors: {serializer.errors}")
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#         # Process regular data fields
+#         for key, value in request.data.items():
+#             if key.startswith('profile[') and key.endswith(']'):
+#                 field_name = key[8:-1]
+#                 profile_data[field_name] = value
+#             else:
+#                 processed_data[key] = value
+        
+#         # Process file fields
+#         for key, file_obj in request.FILES.items():
+#             if key.startswith('profile[') and key.endswith(']'):
+#                 field_name = key[8:-1]
+#                 profile_data[field_name] = file_obj
+#             else:
+#                 processed_data[key] = file_obj
+        
+#         # Add the nested profile data
+#         if profile_data:
+#             processed_data['profile'] = profile_data
+        
+#         logger.info(f"Processed data structure: {processed_data}")
+        
+#         serializer = self.get_serializer(user, data=processed_data, partial=True)
+        
+#         if serializer.is_valid():
+#             logger.info("Serializer is valid, saving...")
+#             serializer.save()
+#             return Response(serializer.data)
+#         else:
+#             logger.error(f"Serializer errors: {serializer.errors}")
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 

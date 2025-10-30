@@ -80,7 +80,7 @@ class Profile(models.Model):
     """Extended user profile with additional information"""
     user = models.OneToOneField(
         User,
-        on_delete=models.CASCADE,
+        on_delete=models.CASCADE,   
         related_name='profile',
         primary_key=True
     )
