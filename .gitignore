@@ -1,0 +1,52 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+*.so
+
+# Ignore the entire txt folder
+txt/
+
+# Ignore all text files in the root or subfolders
+*.txt
+
+# --- Django ---
+*.log
+logs/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+# Only ignore media content, but keep the folder (optional)
+# media/*
+# !media/.gitkeep
+
+# --- Celery / Redis ---
+celerybeat-schedule
+celerybeat-schedule-shm
+celerybeat-schedule-wal
+celerybeat.pid
+
+# --- Environment Variables ---
+.env
+.env.local
+.env.*.local
+
+# --- Backup / OS ---
+*.backup
+*.sql
+*.dump
+.DS_Store
+Thumbs.db
+*.rdb
+
+# --- Frontend (if in same repo) ---
+node_modules/
+.next/
+out/
+build/
+.vercel
