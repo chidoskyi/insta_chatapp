@@ -9,10 +9,10 @@ ENV/
 *.so
 
 # Ignore the entire txt folder
-txt/
+# txt/
 
-# Ignore all text files in the root or subfolders
-*.txt
+# # Ignore all text files in the root or subfolders
+# *.txt
 
 # --- Django ---
 *.log
